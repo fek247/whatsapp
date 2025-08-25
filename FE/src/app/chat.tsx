@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { EllipsisVertical, MessageSquarePlus, Search } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { EllipsisVertical, LogOut, MessageSquarePlus, Search, SquareCheck, Star, Users } from "lucide-react";
 
 export default function Chat() {
     return (
-        <div>
+        <DropdownMenu>
             <div className="flex justify-between mb-4">
                 <p className="text-xl text-primary font-medium">WhatsApp</p>
                 <div className="flex items-center px-3">
@@ -14,12 +15,49 @@ export default function Chat() {
                     >
                         <MessageSquarePlus size={22} className="text-black" />
                     </div>
-                    <div
-                        role="button"
-                        className="h-10 w-10 hover:bg-navbar rounded-full flex items-center justify-center"
-                    >
-                        <EllipsisVertical size={22} className="text-black" />
-                    </div>
+                    <DropdownMenuTrigger asChild>
+                        <div
+                            role="button"
+                            className="h-10 w-10 hover:bg-navbar rounded-full flex items-center justify-center"
+                        >
+                            <EllipsisVertical size={22} className="text-black" />
+                        </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-50 relative z-10" align="start">
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem className="h-10">
+                                <div className="flex items-center">
+                                    <Users className="mr-3" />
+                                    <p className="text-gray text-base">Nhóm mới</p>
+                                </div>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="h-10">
+
+                                <div className="flex items-center">
+                                    <Star className="mr-3" />
+                                    <p className="text-gray text-base">Tin nhắn đã gắn sao</p>
+                                </div>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+
+                                <div className="flex items-center">
+                                    <SquareCheck className="mr-3" />
+                                    <p className="text-gray text-base">Chọn đoạn chat</p>
+                                </div>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem>
+                                <div className="flex items-center">
+                                    <LogOut className="mr-3" />
+                                    <p className="text-gray text-base">Đăng xuất</p>
+                                </div>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                    </DropdownMenuContent>
                 </div>
             </div>
             <div className="relative mb-4">
@@ -60,6 +98,6 @@ export default function Chat() {
                     <p className="text-base font-normal text-black">Chưa đọc</p>
                 </Button>
             </div>
-        </div>
+        </DropdownMenu>
     );
 }
