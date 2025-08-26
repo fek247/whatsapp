@@ -21,7 +21,6 @@ import {
     Mic,
     Plus,
     Search,
-    SearchIcon,
     SmilePlus,
     SquareCheck,
     Star,

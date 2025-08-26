@@ -5,10 +5,10 @@ import Navbar from "./navbar";
 import { NavProvider, useNav } from "@/context/nav-context";
 import Chat from "./chat";
 import Status from "./status";
+import Setting from "./setting";
 
 const Channel = () => <div className="p-3">📺 Đây là màn hình Channel</div>;
 const Community = () => <div className="p-3">👥 Đây là màn hình Community</div>;
-const Setting = () => <div className="p-3">⚙️ Đây là màn hình Setting</div>;
 
 const components: Record<string, React.ReactNode> = {
     chat: <Chat />,

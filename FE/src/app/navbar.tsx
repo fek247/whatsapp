@@ -6,6 +6,7 @@ import {
     Settings,
     UsersRound,
 } from "lucide-react";
+import Image from "next/image";
 
 export default function Navbar() {
     const { activeNav, setActiveNav } = useNav();
@@ -70,6 +71,13 @@ export default function Navbar() {
                     className="w-10 h-10 flex items-center justify-center hover:bg-border rounded-full"
                 >
                     <Settings className="text-black" />
+                </div>
+                <div
+                    role="button"
+                    onClick={() => setActiveNav("profile")}
+                    className="w-10 h-10 flex items-center justify-center hover:bg-border rounded-full"
+                >
+                    <Image className="rounded-full w-7 h-7" src={'/nature.jpg'} alt="" width={28} height={28}/>
                 </div>
             </div>
         </div>
