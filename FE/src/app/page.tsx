@@ -2,7 +2,7 @@
 
 import React from "react";
 import Navbar from "./navbar";
-import { NavProvider, useNav } from "@/context/NavContext";
+import { NavProvider, useNav } from "@/context/nav-context";
 import Chat from "./chat";
 import Status from "./status";
 
@@ -20,13 +20,9 @@ const components: Record<string, React.ReactNode> = {
 
 function Content() {
     const { activeNav } = useNav();
-    const component = components[activeNav]
+    const component = components[activeNav];
 
-    return (
-        <div className="px-5 py-3 w-100">
-            {component}
-        </div>
-    );
+    return component;
 }
 
 export default function Home() {
@@ -34,7 +30,6 @@ export default function Home() {
         <NavProvider>
             <div className="h-screen flex">
                 <Navbar />
-
                 <Content />
             </div>
         </NavProvider>

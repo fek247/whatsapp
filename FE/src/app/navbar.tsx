@@ -1,4 +1,4 @@
-import { useNav } from "@/context/NavContext";
+import { useNav } from "@/context/nav-context";
 import {
     CircleDotDashed,
     MessageCircle,
