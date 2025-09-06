@@ -92,3 +92,16 @@ pub async fn health_check_handler() -> impl IntoResponse {
 
     Json(json_response)
 }
+
+struct Login {
+    google_id: String,
+}
+
+pub async fn login_handler() -> impl IntoResponse {
+    let json_response = serde_json::json!({
+        "status": "success",
+        "message": 1
+    });
+
+    Json(json_response)
+}

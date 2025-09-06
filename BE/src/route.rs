@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use axum::{
-    routing::{get},
+    routing::{get, post},
     Router,
 };
 
 use crate::{
     handler::{
-        health_check_handler, websocket_handler, index
+        health_check_handler, websocket_handler, index, login_handler
     },
     AppState,
 };
@@ -17,5 +17,6 @@ pub fn create_route(app_state: Arc<AppState>) -> Router {
         .route("/api/healthcheck", get(health_check_handler))
         .route("/", get(index))
         .route("/websocket", get(websocket_handler))
+        .route("/login", post(login_handler))
         .with_state(app_state)
 }
