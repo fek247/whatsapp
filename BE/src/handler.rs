@@ -1,13 +1,22 @@
 use std::sync::Arc;
 
-use axum::{extract::{ws::{Message, Utf8Bytes, WebSocket}, State, WebSocketUpgrade}, response::{Html, IntoResponse}, Json};
+use axum::{
+    Json,
+    extract::{
+        State, WebSocketUpgrade,
+        ws::{Message, Utf8Bytes, WebSocket},
+    },
+    http::StatusCode,
+    response::{Html, IntoResponse},
+};
 use futures_util::{SinkExt, StreamExt};
+use serde::Deserialize;
 
-use crate::AppState;
+use crate::{AppState};
 
 pub async fn websocket_handler(
     ws: WebSocketUpgrade,
-    State(state): State<Arc<AppState>>
+    State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     ws.on_upgrade(|socket| websocket(socket, state))
 }
@@ -93,15 +102,53 @@ pub async fn health_check_handler() -> impl IntoResponse {
     Json(json_response)
 }
 
-struct Login {
+#[derive(Deserialize, Debug)]
+pub struct LoginRequest {
+    email: String,
     google_id: String,
 }
 
-pub async fn login_handler() -> impl IntoResponse {
-    let json_response = serde_json::json!({
+pub async fn login_handler(
+    State(data): State<Arc<AppState>>,
+    Json(payload): Json<LoginRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let users = sqlx::query(r#"SELECT * FROM users WHERE google_id = ($1)"#)
+        .bind(&payload.google_id)
+        .fetch_all(&data.db)
+        .await
+        .map_err(|err| {
+            let _error_response = serde_json::json!({
+                "status": "error",
+                "message": format!("Database error: { }", err)
+            });
+        });
+
+    if users.iter().len() > 0 {
+        let error_response = serde_json::json!({
+            "status": "error",
+            "message": "User email already exist"
+        });
+
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
+    }
+
+    let query_result = sqlx::query(r#"INSERT INTO users (email, google_id) VALUES ($1, $2)"#)
+        .bind(&payload.email)
+        .bind(&payload.google_id)
+        .execute(&data.db)
+        .await
+        .map_err(|err: sqlx::Error| err.to_string());
+
+    match query_result {
+        Ok(result) => {
+            println!("{:?}", result)
+        }
+        Err(err) => println!("{err}"),
+    };
+
+    let response = serde_json::json!({
         "status": "success",
-        "message": 1
     });
 
-    Json(json_response)
+    Ok(Json(response))
 }

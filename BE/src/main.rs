@@ -1,5 +1,6 @@
 mod handler;
 mod route;
+mod model;
 
 use std::{collections::HashSet, sync::{Arc, Mutex}};
 
@@ -50,11 +51,6 @@ async fn main() {
     let app_state = Arc::new(AppState{user_set, tx, db: pool.clone()});
 
     let app = create_route(app_state);
-
-    // let app = Router::new()
-    //     .route("/", get(index))
-    //     .route("/websocket", get(websocket_handler))
-    //     .with_state(app_state);
     
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
             .await
