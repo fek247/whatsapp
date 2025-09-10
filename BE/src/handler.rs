@@ -12,7 +12,7 @@ use axum::{
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
 
-use crate::{AppState};
+use crate::AppState;
 
 pub async fn websocket_handler(
     ws: WebSocketUpgrade,
@@ -112,43 +112,47 @@ pub async fn login_handler(
     State(data): State<Arc<AppState>>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let users = sqlx::query(r#"SELECT * FROM users WHERE google_id = ($1)"#)
+    let user = sqlx::query(r#"SELECT * FROM users WHERE google_id = $1"#)
         .bind(&payload.google_id)
-        .fetch_all(&data.db)
-        .await
-        .map_err(|err| {
-            let _error_response = serde_json::json!({
+        .fetch_one(&data.db)
+        .await;
+    match user {
+        Ok(record) => {
+            let error_response = serde_json::json!({
+                "status": "error",
+                "message": "User email already exist"
+            });
+
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
+        }
+        Err(sqlx::Error::RowNotFound) => {
+            let query_result =
+                sqlx::query(r#"INSERT INTO users (email, google_id) VALUES ($1, $2)"#)
+                    .bind(&payload.email)
+                    .bind(&payload.google_id)
+                    .execute(&data.db)
+                    .await
+                    .map_err(|err: sqlx::Error| err.to_string());
+
+            match query_result {
+                Ok(result) => {
+                    println!("{:?}", result)
+                }
+                Err(err) => println!("{err}"),
+            };
+
+            let response = serde_json::json!({
+                "status": "success",
+            });
+
+            Ok(Json(response))
+        }
+        Err(err) => {
+            let error_response = serde_json::json!({
                 "status": "error",
                 "message": format!("Database error: { }", err)
             });
-        });
-
-    if users.iter().len() > 0 {
-        let error_response = serde_json::json!({
-            "status": "error",
-            "message": "User email already exist"
-        });
-
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
-    }
-
-    let query_result = sqlx::query(r#"INSERT INTO users (email, google_id) VALUES ($1, $2)"#)
-        .bind(&payload.email)
-        .bind(&payload.google_id)
-        .execute(&data.db)
-        .await
-        .map_err(|err: sqlx::Error| err.to_string());
-
-    match query_result {
-        Ok(result) => {
-            println!("{:?}", result)
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
         }
-        Err(err) => println!("{err}"),
-    };
-
-    let response = serde_json::json!({
-        "status": "success",
-    });
-
-    Ok(Json(response))
+    }
 }
