@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import Conversation from "@/components/custom/conversation";
 import Image from "next/image";
+import { signOut } from "next-auth/react";
 
 export default function Chat() {
     return (
@@ -97,9 +98,7 @@ export default function Chat() {
                                     <DropdownMenuItem>
                                         <div className="flex items-center">
                                             <LogOut className="mr-3" />
-                                            <p className="text-gray text-base">
-                                                Đăng xuất
-                                            </p>
+                                            <button onClick={() => signOut({ callbackUrl: "/login" })}>Đăng xuất</button>
                                         </div>
                                     </DropdownMenuItem>
                                 </DropdownMenuGroup>

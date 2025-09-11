@@ -121,7 +121,7 @@ pub async fn login_handler(
         Ok(record) => {
             let next_day = Local::now() + Duration::days(1);
             let claims = Claims {
-                sub: record.get("id"),
+                sub: record.try_get::<i32, _>("id").unwrap().to_string(),
                 exp: next_day.timestamp_millis(),
             };
             let token = handle_encode(&claims).unwrap();
