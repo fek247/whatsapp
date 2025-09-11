@@ -7,7 +7,7 @@ use axum::{
 
 use crate::{
     handler::{
-        health_check_handler, websocket_handler, index, login_handler
+        health_check_handler, index, login_handler, signup_handler, websocket_handler
     },
     AppState,
 };
@@ -18,5 +18,6 @@ pub fn create_route(app_state: Arc<AppState>) -> Router {
         .route("/", get(index))
         .route("/websocket", get(websocket_handler))
         .route("/login", post(login_handler))
+        .route("/signup", post(signup_handler))
         .with_state(app_state)
 }

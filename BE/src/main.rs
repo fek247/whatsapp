@@ -1,6 +1,7 @@
 mod handler;
 mod route;
 mod model;
+mod jwt;
 
 use std::{collections::HashSet, sync::{Arc, Mutex}};
 

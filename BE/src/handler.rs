@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc};
 
 use axum::{
     Json,
@@ -9,10 +9,11 @@ use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
+use chrono::{Duration, Local};
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
-
-use crate::AppState;
+use crate::{jwt::{handle_encode, Claims}, AppState};
+use sqlx::Row;
 
 pub async fn websocket_handler(
     ws: WebSocketUpgrade,
@@ -118,11 +119,49 @@ pub async fn login_handler(
         .await;
     match user {
         Ok(record) => {
-            let error_response = serde_json::json!({
-                "status": "error",
-                "message": "User email already exist"
+            let next_day = Local::now() + Duration::days(1);
+            let claims = Claims {
+                sub: record.get("id"),
+                exp: next_day.timestamp_millis(),
+            };
+            let token = handle_encode(&claims).unwrap();
+            let response = serde_json::json!({
+                "access_token": token,
             });
 
+            Ok(Json(response))
+        }
+        Err(sqlx::Error::RowNotFound) => {
+
+            let response = serde_json::json!({
+                "is_registered": false,
+            });
+
+            Ok(Json(response))
+        }
+        Err(err) => {
+            let error_response = serde_json::json!({
+                "message": format!("Database error: { }", err)
+            });
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
+        }
+    }
+}
+
+pub async fn signup_handler(
+    State(data): State<Arc<AppState>>,
+    Json(payload): Json<LoginRequest>
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user = sqlx::query(r#"SELECT * FROM users WHERE google_id = $1"#)
+        .bind(&payload.google_id)
+        .fetch_one(&data.db)
+        .await;
+
+    match user {
+        Ok(record) => {
+            let error_response = serde_json::json!({
+                "message": "User already exists"
+            });
             return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
         }
         Err(sqlx::Error::RowNotFound) => {
@@ -142,14 +181,13 @@ pub async fn login_handler(
             };
 
             let response = serde_json::json!({
-                "status": "success",
+                "message": "success"
             });
-
+            
             Ok(Json(response))
         }
         Err(err) => {
             let error_response = serde_json::json!({
-                "status": "error",
                 "message": format!("Database error: { }", err)
             });
             return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
