@@ -7,6 +7,7 @@ use std::{collections::HashSet, sync::{Arc, Mutex}};
 
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use tokio::sync::broadcast;
+use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use dotenv::dotenv;
 use route::create_route;
@@ -51,7 +52,9 @@ async fn main() {
 
     let app_state = Arc::new(AppState{user_set, tx, db: pool.clone()});
 
-    let app = create_route(app_state);
+    let cors = CorsLayer::new().allow_origin("http://localhost:3000".parse::<axum::http::HeaderValue>().unwrap()).allow_headers(Any);
+
+    let app = create_route(app_state, cors);
     
     let listener = tokio::net::TcpListener::bind("127.0.0.1:4000")
             .await

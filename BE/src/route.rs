@@ -4,6 +4,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use tower_http::cors::CorsLayer;
 
 use crate::{
     handler::{
@@ -12,7 +13,7 @@ use crate::{
     AppState,
 };
 
-pub fn create_route(app_state: Arc<AppState>) -> Router {
+pub fn create_route(app_state: Arc<AppState>, cors: CorsLayer) -> Router {
     Router::new()
         .route("/api/healthcheck", get(health_check_handler))
         .route("/", get(index))
@@ -20,4 +21,5 @@ pub fn create_route(app_state: Arc<AppState>) -> Router {
         .route("/login", post(login_handler))
         .route("/signup", post(signup_handler))
         .with_state(app_state)
+        .layer(cors)
 }

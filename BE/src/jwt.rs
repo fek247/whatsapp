@@ -2,7 +2,7 @@ use std::env;
 
 use axum::{http::StatusCode, response::{IntoResponse, Response}, Json};
 use serde::{Serialize, Deserialize};
-use jsonwebtoken::{encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde_json::json;
 
 /// Our claims struct, it needs to derive `Serialize` and/or `Deserialize`
@@ -21,6 +21,10 @@ enum AuthError {
 
 pub fn handle_encode(claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> {
     encode(&Header::default(), claims, &EncodingKey::from_secret(env::var("JWT_SECRET").expect("Not found JWT_SECRET").as_ref()))
+}
+
+pub fn handle_decode(token: &str) -> Result<jsonwebtoken::TokenData<Claims>, jsonwebtoken::errors::Error> {
+    decode(&token, &DecodingKey::from_secret(env::var("JWT_SECRET").expect("Not found JWT_SECRET").as_ref()), &Validation::default())
 }
 
 impl IntoResponse for AuthError {

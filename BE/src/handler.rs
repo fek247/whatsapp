@@ -12,7 +12,7 @@ use axum::{
 use chrono::{Duration, Local};
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
-use crate::{jwt::{handle_encode, Claims}, AppState};
+use crate::{jwt::{handle_decode, handle_encode, Claims}, AppState};
 use sqlx::Row;
 
 pub async fn websocket_handler(
@@ -105,14 +105,18 @@ pub async fn health_check_handler() -> impl IntoResponse {
 
 #[derive(Deserialize, Debug)]
 pub struct LoginRequest {
-    email: String,
+    access_token: String,
     google_id: String,
+    email: String
 }
 
 pub async fn login_handler(
     State(data): State<Arc<AppState>>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let decode = handle_decode(&payload.access_token);
+    println!("{:?}", decode);
+
     let user = sqlx::query(r#"SELECT * FROM users WHERE google_id = $1"#)
         .bind(&payload.google_id)
         .fetch_one(&data.db)
