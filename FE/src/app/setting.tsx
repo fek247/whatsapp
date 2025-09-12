@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Bell, CircleQuestionMark, Dock, Key, Keyboard, KeyRound, Lock, LogOut, Search, Settings } from "lucide-react";
+import { signOut } from "next-auth/react";
 import Image from "next/image";
 
 export default function Setting() {
@@ -81,7 +82,7 @@ export default function Setting() {
                         <p className="text-base text-gray">Trung tâm trợ giúp, liên hệ với chúng tôi, chính sách quyền riêng tư</p>
                     </div>
                 </div>
-                <div role="button" onClick={() => console.log('logout')} className="flex rounded-xl py-3 hover:bg-navbar">
+                <div role="button" onClick={() => signOut({ callbackUrl: "/login" })} className="flex rounded-xl py-3 hover:bg-navbar">
                     <div className="w-16 flex justify-center items-center">
                         <LogOut color="red"/>
                     </div>

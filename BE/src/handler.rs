@@ -12,7 +12,7 @@ use axum::{
 use chrono::{Duration, Local};
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
-use crate::{jwt::{handle_decode, handle_encode, Claims}, AppState};
+use crate::{jwt::{handle_encode, verify_token, Claims, Provider}, AppState};
 use sqlx::Row;
 
 pub async fn websocket_handler(
@@ -105,43 +105,50 @@ pub async fn health_check_handler() -> impl IntoResponse {
 
 #[derive(Deserialize, Debug)]
 pub struct LoginRequest {
-    access_token: String,
-    google_id: String,
-    email: String
+    token_id: String,
 }
 
 pub async fn login_handler(
     State(data): State<Arc<AppState>>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let decode = handle_decode(&payload.access_token);
-    println!("{:?}", decode);
+    let google_claims = verify_token(&payload.token_id, Provider::Google).await.unwrap();
 
     let user = sqlx::query(r#"SELECT * FROM users WHERE google_id = $1"#)
-        .bind(&payload.google_id)
+        .bind(&google_claims.sub)
         .fetch_one(&data.db)
         .await;
     match user {
         Ok(record) => {
-            let next_day = Local::now() + Duration::days(1);
-            let claims = Claims {
-                sub: record.try_get::<i32, _>("id").unwrap().to_string(),
-                exp: next_day.timestamp_millis(),
-            };
-            let token = handle_encode(&claims).unwrap();
-            let response = serde_json::json!({
-                "access_token": token,
-            });
+            let id: i32 = record.try_get("id").unwrap();
+            let response = generate_jwt_token(&id);
 
             Ok(Json(response))
         }
         Err(sqlx::Error::RowNotFound) => {
+            let query_result =
+                sqlx::query(r#"INSERT INTO users (email, google_id) VALUES ($1, $2) RETURNING id"#)
+                    .bind(&google_claims.email)
+                    .bind(&google_claims.sub)
+                    .fetch_one(&data.db)
+                    .await
+                    .map_err(|err: sqlx::Error| err.to_string());
+            
+            match query_result {
+                Ok(record) => {
+                    let id: i32 = record.try_get("id").unwrap();
+                    let response = generate_jwt_token(&id);
 
-            let response = serde_json::json!({
-                "is_registered": false,
-            });
+                    return Ok(Json(response));
+                }
+                Err(err) => {
+                    let error_response = serde_json::json!({
+                        "message": format!("Error while insert: { }", err)
+                    });
 
-            Ok(Json(response))
+                    return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
+                },
+            };
         }
         Err(err) => {
             let error_response = serde_json::json!({
@@ -152,49 +159,14 @@ pub async fn login_handler(
     }
 }
 
-pub async fn signup_handler(
-    State(data): State<Arc<AppState>>,
-    Json(payload): Json<LoginRequest>
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let user = sqlx::query(r#"SELECT * FROM users WHERE google_id = $1"#)
-        .bind(&payload.google_id)
-        .fetch_one(&data.db)
-        .await;
-
-    match user {
-        Ok(record) => {
-            let error_response = serde_json::json!({
-                "message": "User already exists"
-            });
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
-        }
-        Err(sqlx::Error::RowNotFound) => {
-            let query_result =
-                sqlx::query(r#"INSERT INTO users (email, google_id) VALUES ($1, $2)"#)
-                    .bind(&payload.email)
-                    .bind(&payload.google_id)
-                    .execute(&data.db)
-                    .await
-                    .map_err(|err: sqlx::Error| err.to_string());
-
-            match query_result {
-                Ok(result) => {
-                    println!("{:?}", result)
-                }
-                Err(err) => println!("{err}"),
-            };
-
-            let response = serde_json::json!({
-                "message": "success"
-            });
-            
-            Ok(Json(response))
-        }
-        Err(err) => {
-            let error_response = serde_json::json!({
-                "message": format!("Database error: { }", err)
-            });
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
-        }
-    }
+fn generate_jwt_token(user_id: &i32) -> serde_json::Value {
+    let next_day = Local::now() + Duration::days(1);
+    let claims = Claims {
+        sub: user_id.to_string(),
+        exp: next_day.timestamp_millis(),
+    };
+    let token = handle_encode(&claims).unwrap();
+    serde_json::json!({
+        "access_token": token,
+    })
 }

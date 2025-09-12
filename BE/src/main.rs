@@ -45,7 +45,7 @@ async fn main() {
             pool
         }
         Err(err) => {
-            println!("🔥 Failed to connect to the database: {:?}", err);
+            println!("Failed to connect to the database: {:?}", err);
             std::process::exit(1);
         }
     };

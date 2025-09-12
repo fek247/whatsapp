@@ -96,9 +96,11 @@ export default function Chat() {
 
                                 <DropdownMenuGroup>
                                     <DropdownMenuItem>
-                                        <div className="flex items-center">
+                                        <div role="button" onClick={() => signOut({ callbackUrl: "/login" })} className="flex items-center">
                                             <LogOut className="mr-3" />
-                                            <button onClick={() => signOut({ callbackUrl: "/login" })}>Đăng xuất</button>
+                                            <p className="text-gray text-base">
+                                                Đăng xuất
+                                            </p>
                                         </div>
                                     </DropdownMenuItem>
                                 </DropdownMenuGroup>

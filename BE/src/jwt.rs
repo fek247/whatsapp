@@ -1,6 +1,6 @@
-use std::env;
+use std::{collections::HashSet, env};
 
-use axum::{http::StatusCode, response::{IntoResponse, Response}, Json};
+use axum::{http::{StatusCode}, response::{IntoResponse, Response}, Json};
 use serde::{Serialize, Deserialize};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde_json::json;
@@ -12,11 +12,35 @@ pub struct Claims {
     pub exp: i64,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct GoogleClaims {
+    pub sub: String,
+    pub email: Option<String>,
+    pub aud: String,
+    pub exp: usize,
+}
+
+pub enum Provider {
+    Google
+}
+
 enum AuthError {
     WrongCredentials,
     MissingCredentials,
     TokenCreation,
     InvalidToken,
+}
+
+#[derive(Debug, Deserialize)]
+struct Jwk {
+    kid: String,
+    n: String,
+    e: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct Jwks {
+    keys: Vec<Jwk>,
 }
 
 pub fn handle_encode(claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> {
@@ -25,6 +49,36 @@ pub fn handle_encode(claims: &Claims) -> Result<String, jsonwebtoken::errors::Er
 
 pub fn handle_decode(token: &str) -> Result<jsonwebtoken::TokenData<Claims>, jsonwebtoken::errors::Error> {
     decode(&token, &DecodingKey::from_secret(env::var("JWT_SECRET").expect("Not found JWT_SECRET").as_ref()), &Validation::default())
+}
+
+pub async fn verify_token(token: &str, provider: Provider) -> Result<GoogleClaims, Box<dyn std::error::Error>> {
+    match provider {
+        Provider::Google => {
+            let jwks_url = "https://www.googleapis.com/oauth2/v3/certs";
+            let jwks: Jwks = reqwest::get(jwks_url).await?.json().await.unwrap();
+            let header = jsonwebtoken::decode_header(token)?;
+            let kid = header.kid.ok_or("No kid in token header")?;
+            let key = jwks.keys.iter().find(|k: &&Jwk| {
+                k.kid == kid
+            }).ok_or("No matching key found")?;
+            let decoding_key = DecodingKey::from_rsa_components(&key.n, &key.e).unwrap();
+            let mut validation = Validation::new(Algorithm::RS256);
+            let client_id = env::var("GOOGLE_CLIENT_ID").expect("Not found Google client id");
+            validation.set_audience(&[client_id.as_str()]);
+            validation.validate_exp = true;
+            let mut iss_set = HashSet::new();
+            iss_set.insert("https://accounts.google.com".to_string());
+            validation.iss = Some(iss_set);
+
+            let token_data = decode::<GoogleClaims>(
+                token,
+                &decoding_key,
+                &validation
+            )?;
+
+            Ok(token_data.claims)
+        }
+    }
 }
 
 impl IntoResponse for AuthError {
