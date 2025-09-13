@@ -6,7 +6,7 @@ import Image from "next/image";
 export default function Setting() {
     return (
         <div className="flex flex-1">
-            <div className="px-5 py-3 w-140 border-1">
+            <div className="nav-header">
                 <div className="mb-4">
                     <p className="text-xl text-black font-medium">Cài đặt</p>
                 </div>

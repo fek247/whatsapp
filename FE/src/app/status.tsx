@@ -14,8 +14,8 @@ import {
 
 export default function Status() {
     return (
-        <div>
-            <div className="px-5 py-3 w-140">
+        <div className="flex flex-1">
+            <div className="nav-header">
                 <div className="flex justify-between mb-4">
                     <p className="text-xl text-black font-medium">Trạng thái</p>
                     <div className="flex items-center px-3">
