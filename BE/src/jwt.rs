@@ -16,6 +16,9 @@ pub struct Claims {
 pub struct GoogleClaims {
     pub sub: String,
     pub email: Option<String>,
+    pub name: Option<String>,
+    #[serde(rename = "picture")]
+    pub image_url: Option<String>,
     pub aud: String,
     pub exp: usize,
 }
@@ -25,9 +28,7 @@ pub enum Provider {
 }
 
 pub enum AuthError {
-    WrongCredentials,
     MissingCredentials,
-    TokenCreation,
     InvalidToken,
 }
 
@@ -91,13 +92,13 @@ pub async fn auth_midldleware(mut req: Request, next: Next) -> Result<Response<B
     };
 
     let mut header = auth_header.split_whitespace();
-    let (bearer, token) = (header.next(), header.next());
+    let (_bearer, token) = (header.next(), header.next());
     let token = match token {
         Some(data) => data,
         None => return Err(AuthError::MissingCredentials)
     };
 
-    let token_data = match handle_decode(token) {
+    let _token_data = match handle_decode(token) {
         Ok(data) => data,
         Err(_) => return Err(AuthError::InvalidToken)
     };
@@ -109,9 +110,7 @@ pub async fn auth_midldleware(mut req: Request, next: Next) -> Result<Response<B
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
-            AuthError::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
             AuthError::MissingCredentials => (StatusCode::BAD_REQUEST, "Missing credentials"),
-            AuthError::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "Token creation error"),
             AuthError::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token"),
         };
 

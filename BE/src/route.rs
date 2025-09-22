@@ -7,7 +7,7 @@ use tower_http::cors::CorsLayer;
 
 use crate::{
     handler::{
-        health_check_handler, index, login_handler, websocket_handler
+        health_check_handler, index, login_handler, search_handle, websocket_handler
     }, jwt, AppState
 };
 
@@ -20,6 +20,10 @@ pub fn create_route(app_state: Arc<AppState>, cors: CorsLayer) -> Router {
         )
         .route("/websocket", get(websocket_handler))
         .route("/login", post(login_handler))
+        .route(
+            "/search",
+            post(search_handle).layer(middleware::from_fn(jwt::auth_midldleware))
+        )
         .with_state(app_state)
         .layer(cors)
 }
