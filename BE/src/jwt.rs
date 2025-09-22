@@ -1,6 +1,6 @@
 use std::{collections::HashSet, env};
 
-use axum::{http::{StatusCode}, response::{IntoResponse, Response}, Json};
+use axum::{body::Body, extract::Request, http::{self, StatusCode}, middleware::Next, response::{IntoResponse, Response}, Json};
 use serde::{Serialize, Deserialize};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde_json::json;
@@ -24,7 +24,7 @@ pub enum Provider {
     Google
 }
 
-enum AuthError {
+pub enum AuthError {
     WrongCredentials,
     MissingCredentials,
     TokenCreation,
@@ -79,6 +79,31 @@ pub async fn verify_token(token: &str, provider: Provider) -> Result<GoogleClaim
             Ok(token_data.claims)
         }
     }
+}
+
+pub async fn auth_midldleware(mut req: Request, next: Next) -> Result<Response<Body>, AuthError> {
+    let auth_header = req.headers_mut().get(http::header::AUTHORIZATION);
+    let auth_header = match auth_header {
+        Some(header) => {
+            header.to_str().map_err(|_| AuthError::MissingCredentials )?
+        },
+        None => return Err(AuthError::MissingCredentials),
+    };
+
+    let mut header = auth_header.split_whitespace();
+    let (bearer, token) = (header.next(), header.next());
+    let token = match token {
+        Some(data) => data,
+        None => return Err(AuthError::MissingCredentials)
+    };
+
+    let token_data = match handle_decode(token) {
+        Ok(data) => data,
+        Err(_) => return Err(AuthError::InvalidToken)
+    };
+    
+    // req.extensions_mut().insert(&'static token_data);
+    Ok(next.run(req).await)
 }
 
 impl IntoResponse for AuthError {
