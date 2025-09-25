@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import Image from "next/image";
 
-export default function Conversation() {
+export default function ShortConversation() {
     return (
         <div className="flex h-full justify-between p-4 bg-navbar rounded-xl">
             <div className="flex items-center">

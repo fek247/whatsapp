@@ -11,13 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-    BadgeCheck,
-    BellOff,
-    CircleMinus,
-    CircleX,
-    ClockFading,
     EllipsisVertical,
-    Info,
     LogOut,
     MessageSquarePlus,
     Mic,
@@ -26,29 +20,36 @@ import {
     SmilePlus,
     SquareCheck,
     Star,
-    ThumbsDown,
-    Trash2,
-    UserMinus,
     Users,
 } from "lucide-react";
-import Conversation from "@/components/custom/chat/conversation";
-import Image from "next/image";
+import ShortConversation from "@/components/custom/chat/short-conversation";
 import { signOut } from "next-auth/react";
+import ConversationHeader from "@/components/custom/chat/conversation-header";
+import { User as UserType } from "@/types/types";
 
-type ChatScreen = "main" | "newChat"
+type ChatScreen = "main" | "newChat";
 
 export default function Chat() {
-    const [screen, setScreen] = useState<ChatScreen>("main")
+    const [screen, setScreen] = useState<ChatScreen>("main");
+
+    const mockUser : UserType = {
+        id: 1,
+        email: "a@gmail.com",
+        image_url: "/barca.jpg",
+        name: "Barca"
+    }
 
     if (screen == "newChat") {
-        return <NewChat onBack={() => setScreen("main")}/>
+        return <NewChat onBack={() => setScreen("main")} />;
     }
 
     return (
         <div className="flex flex-1">
             <div className="nav-header">
                 <div className="flex justify-between mb-4">
-                    <p className="text-2xl text-primary font-medium">WhatsApp</p>
+                    <p className="text-2xl text-primary font-medium">
+                        WhatsApp
+                    </p>
                     <div className="flex items-center px-3">
                         <div
                             role="button"
@@ -107,7 +108,15 @@ export default function Chat() {
 
                                 <DropdownMenuGroup>
                                     <DropdownMenuItem>
-                                        <div role="button" onClick={() => signOut({ callbackUrl: "/login" })} className="flex items-center">
+                                        <div
+                                            role="button"
+                                            onClick={() =>
+                                                signOut({
+                                                    callbackUrl: "/login",
+                                                })
+                                            }
+                                            className="flex items-center"
+                                        >
                                             <LogOut className="mr-3" />
                                             <p className="text-gray text-base">
                                                 Đăng xuất
@@ -162,130 +171,25 @@ export default function Chat() {
                     </Button>
                 </div>
                 <div className="h-18">
-                    <Conversation />
+                    <ShortConversation />
                 </div>
             </div>
 
             <div className="flex flex-col justify-between flex-1">
-                <div className="h-16 p-4 flex justify-between border-1">
-                    <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full overflow-hidden mr-4">
-                            <Image src={'/barca.jpg'} alt="channel-logo" width={40} height={40}/>
-                        </div>
-                        <div className="flex items-center">
-                            <p className="mr-1">Barca</p>
-                            <BadgeCheck color="#00DA60"/>
-                        </div>
-                    </div>
-
-                    <div className="flex">
-                        <div className="w-10 h-10 mr-2 flex items-center justify-center">
-                            <Search size={24}/>
-                        </div>
-                        <DropdownMenu>
-                            <div role="button" className="w-10 h-10 mr-2 flex items-center justify-center">
-                                <DropdownMenuTrigger asChild>
-                                <EllipsisVertical size={24}/>
-                                </DropdownMenuTrigger>
-                            </div>
-                            <DropdownMenuContent>
-                                <DropdownMenuGroup>
-                                    <DropdownMenuItem>
-                                        <div className="flex items-center">
-                                            <Info className="mr-3" />
-                                            <p className="text-gray text-base">
-                                                Thông tin liên hệ
-                                            </p>
-                                        </div>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem>
-                                        <div className="flex items-center">
-                                            <SquareCheck className="mr-3" />
-                                            <p className="text-gray text-base">
-                                                Chọn tin nhắn
-                                            </p>
-                                        </div>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem>
-                                        <div className="flex items-center">
-                                            <BellOff className="mr-3" />
-                                            <p className="text-gray text-base">
-                                                Bật thông báo
-                                            </p>
-                                        </div>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem>
-                                        <div className="flex items-center">
-                                            <ClockFading className="mr-3" />
-                                            <p className="text-gray text-base">
-                                                Tin nhắn tự hủy
-                                            </p>
-                                        </div>
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem>
-                                        <div className="flex items-center">
-                                            <CircleX className="mr-3" />
-                                            <p className="text-gray text-base">
-                                                Đóng đoạn chat
-                                            </p>
-                                        </div>
-                                    </DropdownMenuItem>
-                                </DropdownMenuGroup>
-
-                                <DropdownMenuSeparator />
-
-                                <DropdownMenuGroup>
-                                    <DropdownMenuItem>
-                                        <div className="flex items-center">
-                                            <ThumbsDown className="mr-3" />
-                                            <p className="text-gray text-base">
-                                                Báo cáo
-                                            </p>
-                                        </div>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                        <div className="flex items-center">
-                                            <UserMinus className="mr-3" />
-                                            <p className="text-gray text-base">
-                                                Chặn
-                                            </p>
-                                        </div>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                        <div className="flex items-center">
-                                            <CircleMinus className="mr-3" />
-                                            <p className="text-gray text-base">
-                                                Xóa nội dung đoạn chat
-                                            </p>
-                                        </div>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                        <div className="flex items-center">
-                                            <Trash2 className="mr-3" />
-                                            <p className="text-gray text-base">
-                                                Xóa đoạn chat
-                                            </p>
-                                        </div>
-                                    </DropdownMenuItem>
-                                </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </div>
+                <ConversationHeader user={mockUser} />
                 <div className="h-13 relative m-3 flex items-center">
                     <div className="absolute top-1/2 -translate-y-1/2 left-3">
-                        <Plus size={24}/>
+                        <Plus size={24} />
                     </div>
                     <div className="absolute top-1/2 -translate-y-1/2 left-13">
-                        <SmilePlus size={24}/>
+                        <SmilePlus size={24} />
                     </div>
-                    <Input placeholder="Soạn tin nhắn" className="pl-23 h-13 focus-visible:border-primary rounded-full bg-white"/>
+                    <Input
+                        placeholder="Soạn tin nhắn"
+                        className="pl-23 h-13 focus-visible:border-primary rounded-full bg-white"
+                    />
                     <div className="absolute top-1/2 -translate-y-1/2 right-3">
-                        <Mic size={24}/>
+                        <Mic size={24} />
                     </div>
                 </div>
             </div>

@@ -185,6 +185,9 @@ pub async fn search_handle (
     State(data): State<Arc<AppState>>,
     Json(payload): Json<SearchRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    if payload.email.is_empty() {
+       return Ok(Json(Response {data: vec![]}))
+    }
     let users = sqlx::query_as::<_, User>(r#"SELECT * FROM users WHERE email like $1"#)
         .bind(format!("%{}%", &payload.email))
         .fetch_all(&data.db)
