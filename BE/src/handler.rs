@@ -12,7 +12,7 @@ use axum::{
 use chrono::{Duration, Local, NaiveDateTime};
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use crate::{jwt::{handle_encode, verify_token, Claims, Provider}, AppState};
+use crate::{jwt::{handle_encode, verify_token, Claims, CurrentUser, Provider}, AppState};
 use sqlx::{prelude::FromRow, Row};
 
 #[derive(Serialize)]
@@ -202,6 +202,26 @@ pub async fn search_handle (
             return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
         }
     }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SendMessageRequest {
+    message: String,
+}
+
+#[axum::debug_handler]
+pub async fn send_message_handler(
+    State(data): State<Arc<AppState>>,
+    CurrentUser(user_id): CurrentUser,
+    Json(payload): Json<SendMessageRequest>,
+) -> impl IntoResponse {
+    println!("user id: {user_id}");
+
+    axum::Json(serde_json::json!({
+        "status": "ok",
+        "user_id": user_id,
+        "message": payload.message,
+    }))
 }
 
 fn generate_jwt_token(user_id: &i32) -> serde_json::Value {

@@ -26,6 +26,7 @@ import ShortConversation from "@/components/custom/chat/short-conversation";
 import { signOut } from "next-auth/react";
 import ConversationHeader from "@/components/custom/chat/conversation-header";
 import { User as UserType } from "@/types/types";
+import ConversationInput from "@/components/custom/chat/conversation-input";
 
 type ChatScreen = "main" | "newChat";
 
@@ -177,21 +178,7 @@ export default function Chat() {
 
             <div className="flex flex-col justify-between flex-1">
                 <ConversationHeader user={mockUser} />
-                <div className="h-13 relative m-3 flex items-center">
-                    <div className="absolute top-1/2 -translate-y-1/2 left-3">
-                        <Plus size={24} />
-                    </div>
-                    <div className="absolute top-1/2 -translate-y-1/2 left-13">
-                        <SmilePlus size={24} />
-                    </div>
-                    <Input
-                        placeholder="Soạn tin nhắn"
-                        className="pl-23 h-13 focus-visible:border-primary rounded-full bg-white"
-                    />
-                    <div className="absolute top-1/2 -translate-y-1/2 right-3">
-                        <Mic size={24} />
-                    </div>
-                </div>
+                <ConversationInput />
             </div>
         </div>
     );

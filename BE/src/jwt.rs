@@ -1,6 +1,6 @@
 use std::{collections::HashSet, env};
 
-use axum::{body::Body, extract::Request, http::{self, StatusCode}, middleware::Next, response::{IntoResponse, Response}, Json};
+use axum::{body::Body, extract::{FromRequestParts, Request}, http::{self, request::Parts, StatusCode}, middleware::Next, response::{IntoResponse, Response}, Json};
 use serde::{Serialize, Deserialize};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde_json::json;
@@ -98,12 +98,17 @@ pub async fn auth_midldleware(mut req: Request, next: Next) -> Result<Response<B
         None => return Err(AuthError::MissingCredentials)
     };
 
-    let _token_data = match handle_decode(token) {
+    let token_data = match handle_decode(token) {
         Ok(data) => data,
         Err(_) => return Err(AuthError::InvalidToken)
     };
     
-    // req.extensions_mut().insert(&'static token_data);
+    if let Ok(user_id) = token_data.claims.sub.parse::<i64>() {
+        req.extensions_mut().insert(user_id);
+    } else {
+        return Err(AuthError::InvalidToken);
+    }
+
     Ok(next.run(req).await)
 }
 
@@ -118,5 +123,26 @@ impl IntoResponse for AuthError {
             "error": error_message
         }));
         (status, body).into_response()
+    }
+}
+
+pub struct CurrentUser(pub i64);
+
+impl<S> FromRequestParts<S> for CurrentUser
+where
+    S: Send + Sync,
+{
+    type Rejection = (StatusCode, String);
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        _state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        parts
+            .extensions
+            .get::<i64>()
+            .copied()
+            .map(CurrentUser)
+            .ok_or((StatusCode::UNAUTHORIZED, "No user_id".into()))
     }
 }
